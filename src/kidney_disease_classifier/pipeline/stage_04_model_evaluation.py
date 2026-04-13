@@ -1,6 +1,7 @@
-from kidney_disease_classifier.config.configuration import ConfigurationManager
-from kidney_disease_classifier.components.model_evaluation_mlflow import Evaluation
 from kidney_disease_classifier import logger
+from kidney_disease_classifier.config.configuration import ConfigurationManager
+from kidney_disease_classifier.components.model_evaluation import Evaluation
+
 
 STAGE_NAME = "Evaluation stage"
 
