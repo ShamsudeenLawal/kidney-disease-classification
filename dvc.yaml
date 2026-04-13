@@ -1,0 +1,55 @@
+stages:
+  data_ingestion:
+    cmd: python src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
+    deps:
+      - src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
+      - config/config.yaml
+    outs:
+      - artifacts/data_ingestion/raw/kidney-ct-scan-image
+
+
+  prepare_base_model:
+    cmd: python src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
+    deps:
+      - src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
+      - config/config.yaml
+    params:
+      - IMAGE_SIZE
+      - CLASSES
+      - WEIGHTS
+      - LEARNING_RATE
+      - MODEL_TYPE
+    outs:
+      - artifacts/prepare_base_model
+
+
+  training:
+    cmd: python src/kidney_disease_classifier/pipeline/stage_03_model_training.py
+    deps:
+      - src/kidney_disease_classifier/pipeline/stage_03_model_training.py
+      - config/config.yaml
+      - artifacts/data_ingestion/raw/kidney-ct-scan-image
+      - artifacts/prepare_base_model
+    params:
+      - IMAGE_SIZE
+      - EPOCHS
+      - BATCH_SIZE
+      - AUGMENTATION
+      - MODEL_TYPE
+    outs:
+      - artifacts/training/model.keras
+
+
+  evaluation:
+    cmd: python src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
+    deps:
+      - src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
+      - config/config.yaml
+      - artifacts/data_ingestion/raw/kidney-ct-scan-image
+      - artifacts/training/model.keras
+    params:
+      - IMAGE_SIZE
+      - BATCH_SIZE
+    metrics:
+    - scores.json:
+        cache: false
