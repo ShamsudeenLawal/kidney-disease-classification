@@ -101,6 +101,7 @@ class ConfigurationManager:
             training_data = training_data,
             mlflow_uri = "",
             all_params = self.params,
+            params_model_type=self.params.MODEL_TYPE,
             params_image_size = self.params.IMAGE_SIZE,
             params_batch_size = self.params.BATCH_SIZE
         )
