@@ -210,3 +210,5 @@ __marimo__/
 # my files and directories
 tf_env_requirements.txt
 notes.txt
+logs/
+artifacts/
