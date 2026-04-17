@@ -1,8 +1,8 @@
-MODEL_TYPE: VGG16 # Available options ["VGG16", "ResNet50", "MobileNetV2", "EfficientNetB0"]
-AUGMENTATION: True
-IMAGE_SIZE: [224, 224, 3]
-BATCH_SIZE: 16
-EPOCHS: 10
-CLASSES: 2
-WEIGHTS: imagenet
-LEARNING_RATE: 0.01
+MODEL_TYPE: VGG16   # Available options ["VGG16", "ResNet50", "MobileNetV2", "EfficientNetB0"]
+AUGMENTATION: True    # Available options [True, False]
+IMAGE_SIZE: [224, 224, 3]   # Only use multiple of 16 for the first two dimensions, DO NOT CHANGE THE THIRD DIMENSION
+BATCH_SIZE: 16    # Any Integer value is fine
+EPOCHS: 10    # Any integer value is fine, the higher the value, the longer the training time and the better the accuracy, though callback is implemented
+CLASSES: 2    # This is a binary classification problem, DO NOT CHANGE THIS VALUE
+WEIGHTS: imagenet   # Available options [imagenet, none]
+LEARNING_RATE: 0.01   # Only change this if you know what you are doing
