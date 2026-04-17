@@ -212,3 +212,6 @@ tf_env_requirements.txt
 notes.txt
 logs/
 artifacts/
+sample.py
+gradio_app.py
+uploads/

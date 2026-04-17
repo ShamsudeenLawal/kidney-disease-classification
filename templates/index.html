@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kidney Disease Classifier</title>
+
+    <style>
+        /* css styling */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 450px;
+            margin: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        input {
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #28a745;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        img {
+            margin-top: 15px;
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .confidence {
+            color: #555;
+            margin-top: 5px;
+        }
+
+        .loading {
+            color: #007BFF;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Kidney Disease Classifier</h2>
+
+    <form id="upload-form">
+        <input type="file" id="fileInput" name="file" accept="image/*" required>
+        <br>
+        <button type="submit">Predict</button>
+    </form>
+
+    <img id="preview" style="display:none;" />
+
+    <div id="output" class="result"></div>
+</div>
+
+<script>
+    const form = document.getElementById("upload-form");
+    const fileInput = document.getElementById("fileInput");
+    const preview = document.getElementById("preview");
+    const output = document.getElementById("output");
+
+    // Preview image
+    fileInput.addEventListener("change", () => {
+        const file = fileInput.files[0];
+        if (file) {
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = "block";
+        }
+    });
+
+    // Handle form submission
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Show loading
+        output.innerHTML = "<span class='loading'>Processing...</span>";
+
+        try {
+            const response = await fetch("/predict", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                output.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+                return;
+            }
+
+            // Display result
+            output.innerHTML = `
+                Prediction: <span style="color:green;">${data.label}</span><br>
+                <div class="confidence">Confidence: ${(data.confidence * 100).toFixed(2)}%</div>
+            `;
+
+        } catch (error) {
+            output.innerHTML = "<span style='color:red;'>Server error</span>";
+        }
+    });
+</script>
+
+</body>
+</html>
