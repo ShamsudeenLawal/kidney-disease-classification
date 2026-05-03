@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 with open("README.md", mode="r", encoding="utf-8") as file:
     long_description = file.read()
 
-__version__ = "0.0.0"
+__version__ = "1.0.0"
 
 REPO_NAME = "kidney-disease-classification"
 AUTHOR_USER_NAME = "ShamsudeenLawal"

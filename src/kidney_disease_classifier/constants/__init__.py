@@ -6,5 +6,5 @@ PARAMS_FILE_PATH: Path to the model parameter yaml file
 """
 from pathlib import Path
 
-CONFIG_FILE_PATH = Path("config/config.yaml")
+CONFIG_FILE_PATH = Path("configs/configs.yaml")
 PARAMS_FILE_PATH = Path("params.yaml")

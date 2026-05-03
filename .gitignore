@@ -208,11 +208,13 @@ __marimo__/
 
 
 # my files and directories
+.github/
 logs/
-artifacts/data_ingestion
-artifacts/prepare_base_model
+mlruns/
+artifacts/
 uploads/
 sample.py
 gradio_app.py
 tf_env_requirements.txt
 notes.txt
+template.py

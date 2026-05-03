@@ -1,7 +1,6 @@
 from kidney_disease_classifier import logger
-from kidney_disease_classifier.config.configuration import ConfigurationManager
-from kidney_disease_classifier.components.model_evaluation import Evaluation
-
+from src.kidney_disease_classifier.config.configuration import ConfigurationManager
+from src.kidney_disease_classifier.components.model_evaluation import Evaluation
 
 STAGE_NAME = "Evaluation stage"
 
@@ -13,9 +12,7 @@ class EvaluationPipeline:
         config = ConfigurationManager()
         eval_config = config.get_evaluation_config()
         evaluation = Evaluation(eval_config)
-        evaluation.evaluate()
-        # evaluation.log_into_mlflow()
-
+        evaluation.run()
 
 if __name__ == '__main__':
     try:
@@ -23,7 +20,7 @@ if __name__ == '__main__':
         logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
         obj = EvaluationPipeline()
         obj.main()
-        logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+        logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<")
     except Exception as e:
         logger.exception(e)
         raise e

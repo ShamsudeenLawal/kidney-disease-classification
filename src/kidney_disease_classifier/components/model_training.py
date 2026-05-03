@@ -1,26 +1,13 @@
-
 import os
+import sys
+import mlflow
 import tensorflow as tf
 from pathlib import Path
+
+from kidney_disease_classifier import logger
+from kidney_disease_classifier.models.model_factory import get_preprocessor
+from kidney_disease_classifier.utils.mlflow_utils import set_or_create_experiment
 from kidney_disease_classifier.entity.config_entity import TrainingConfig
-
-
-def select_preprocessor(config):
-    model_type = config.params_model_type.lower()
-
-    preprocessors = {
-        "vgg16": tf.keras.applications.vgg16.preprocess_input,
-        "resnet50": tf.keras.applications.resnet50.preprocess_input,
-        "mobilenetv2": tf.keras.applications.mobilenet_v2.preprocess_input,
-        "efficientnetb0": tf.keras.applications.efficientnet.preprocess_input,
-    }
-
-    if model_type not in preprocessors:
-        raise ValueError(
-            "Invalid model type. Choose from: ['VGG16', 'ResNet50', 'MobileNetV2', 'EfficientNetB0']"
-        )
-
-    return preprocessors[model_type]
 
 
 class Training:
@@ -33,81 +20,168 @@ class Training:
             self.config.updated_base_model_path
         )
 
-    def load_datasets(self):
-        # Resolve dataset directory
-        data_dir = os.path.join(
-            self.config.training_data,
-            os.listdir(self.config.training_data)[0]
+        optimizer = self._get_optimizer()
+
+        self.model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"]
         )
 
-        image_size = self.config.params_image_size[:-1]
-        batch_size = self.config.params_batch_size
+        logger.info("Model loaded and compiled")
 
-        # Load datasets
+
+    def _get_optimizer(self):
+        lr = self.config.learning_rate
+
+        if self.config.optimizer.lower() == "adam":
+            return tf.keras.optimizers.Adam(learning_rate=lr)
+
+        elif self.config.optimizer.lower() == "sgd":
+            return tf.keras.optimizers.SGD(learning_rate=lr)
+
+        else:
+            raise ValueError(f"Unsupported optimizer: {self.config.optimizer}")
+        
+    def load_datasets(self):
+        image_size = self.config.input_shape[:-1]
+
         self.train_ds = tf.keras.utils.image_dataset_from_directory(
-            data_dir,
-            validation_split=0.2,
-            subset="training",
-            seed=123,
+            self.config.train_dir,
             image_size=image_size,
-            batch_size=batch_size
+            batch_size=self.config.batch_size,
+            shuffle=True,
+            seed=42
         )
 
         self.valid_ds = tf.keras.utils.image_dataset_from_directory(
-            data_dir,
-            validation_split=0.2,
-            subset="validation",
-            seed=123,
+            self.config.val_dir,
             image_size=image_size,
-            batch_size=batch_size
+            batch_size=self.config.batch_size,
+            shuffle=False
         )
+
+        logger.info("Datasets loaded")
 
     def build_pipeline(self):
-        preprocessor = select_preprocessor(self.config)
+        preprocessor = get_preprocessor(model_name=self.config.model_name)
 
-        # Data augmentation (ONLY for training)
-        if self.config.params_is_augmentation:
-            self.data_augmentation = tf.keras.Sequential([
-                tf.keras.layers.RandomFlip("horizontal"),
-                tf.keras.layers.RandomRotation(0.2),
-                tf.keras.layers.RandomZoom(0.2),
-                tf.keras.layers.RandomTranslation(0.1, 0.1),
+        aug_cfg = self.config.augmentation
+
+        if aug_cfg["enabled"]:
+            augmentation = tf.keras.Sequential([
+                tf.keras.layers.RandomFlip("horizontal") if aug_cfg["horizontal_flip"] else tf.keras.layers.Lambda(lambda x: x),
+                tf.keras.layers.RandomRotation(aug_cfg["rotation"]),
+                tf.keras.layers.RandomZoom(aug_cfg["zoom"]),
+                tf.keras.layers.RandomTranslation(
+                    aug_cfg["translation"], aug_cfg["translation"]
+                ),
             ])
         else:
-            self.data_augmentation = tf.keras.Sequential([])
+            augmentation = None
 
-        # Apply pipeline
-        self.train_ds = self.train_ds.map(
-            lambda x, y: (preprocessor(self.data_augmentation(x, training=True)), y),
-            num_parallel_calls=tf.data.AUTOTUNE
-        )
+        def train_map(x, y):
+            if augmentation:
+                x = augmentation(x, training=True)
+            x = preprocessor(x)
+            return x, y
 
-        self.valid_ds = self.valid_ds.map(
-            lambda x, y: (preprocessor(x), y),
-            num_parallel_calls=tf.data.AUTOTUNE
-        )
+        def val_map(x, y):
+            return preprocessor(x), y
 
-        # Performance optimization
-        self.train_ds = self.train_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
-        self.valid_ds = self.valid_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
+        self.train_ds = self.train_ds.map(train_map, num_parallel_calls=tf.data.AUTOTUNE)
+        self.valid_ds = self.valid_ds.map(val_map, num_parallel_calls=tf.data.AUTOTUNE)
 
-    @staticmethod
-    def save_model(path: Path, model: tf.keras.Model):
-        model.save(path)
+        self.train_ds = self.train_ds.prefetch(tf.data.AUTOTUNE)
+        self.valid_ds = self.valid_ds.prefetch(tf.data.AUTOTUNE)
+
+        logger.info("Pipeline built")
+
+    def _get_callbacks(self):
+        cb_cfg = self.config.callbacks
+
+        callbacks = []
+
+        if "early_stopping" in cb_cfg:
+            es = cb_cfg["early_stopping"]
+            callbacks.append(
+                tf.keras.callbacks.EarlyStopping(
+                    monitor=es["monitor"],
+                    patience=es["patience"],
+                    restore_best_weights=es["restore_best_weights"]
+                )
+            )
+
+        return callbacks
+    
 
     def train(self):
+        set_or_create_experiment(self.config.experiment_name)
 
-        callbacks = [
-            tf.keras.callbacks.EarlyStopping(monitor="val_accuracy", mode="max", patience=5, restore_best_weights=True),
-            ]
-        self.model.fit(
-            self.train_ds,
-            validation_data=self.valid_ds,
-            epochs=self.config.params_epochs,
-            callbacks=callbacks
-        )
+        with mlflow.start_run(run_name=f"{self.config.model_name}_training") as run:
 
-        self.save_model(
-            path=self.config.trained_model_path,
-            model=self.model
-        )
+            mlflow.log_params({
+                "model": self.config.model_name,
+                "input_shape": self.config.input_shape,
+                "weights": self.config.weights,
+                "epochs": self.config.epochs,
+                "batch_size": self.config.batch_size,
+                "lr": self.config.learning_rate,
+                "optimizer": self.config.optimizer,
+            })
+
+            # logging dictionary data
+            mlflow.log_params(self.config.augmentation)
+            mlflow.log_params(self.config.transfer_learning)
+            mlflow.log_params(self.config.callbacks)
+
+
+            history = self.model.fit(
+                self.train_ds,
+                validation_data=self.valid_ds,
+                epochs=self.config.epochs,
+                callbacks=self._get_callbacks()
+            )
+
+            train_loss, train_acc = self.model.evaluate(self.train_ds, verbose=0)
+            val_loss, val_acc = self.model.evaluate(self.valid_ds, verbose=0)
+
+            mlflow.log_metrics({
+                "train_acc": train_acc,
+                "val_acc": val_acc,
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+            })
+
+            # log full training history (VERY USEFUL)
+            for epoch, acc in enumerate(history.history["accuracy"]):
+                mlflow.log_metric("epoch_train_accuracy", acc, step=epoch)
+
+            for epoch, val_acc in enumerate(history.history["val_accuracy"]):
+                mlflow.log_metric("epoch_val_accuracy", val_acc, step=epoch)
+
+            # ---------------- SAVE MODEL ----------------
+            mlflow.keras.log_model(self.model, "model")
+
+            self._save_model(self.config.trained_model_path, self.model)
+
+            os.makedirs(os.path.dirname(self.config.run_id_file), exist_ok=True)
+            self.config.run_id_file.write_text(run.info.run_id)
+
+            logger.info("Training completed successfully")
+
+    @staticmethod
+    def _save_model(path: Path, model: tf.keras.Model):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        model.save(path)
+
+    def run(self):
+        logger.info("Starting training pipeline...")
+
+        self.get_base_model()
+        self.load_datasets()
+        self.build_pipeline()
+        self.train()
+
+        logger.info("Training finished successfully")
+

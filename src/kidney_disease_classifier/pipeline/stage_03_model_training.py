@@ -1,5 +1,5 @@
-from kidney_disease_classifier.config.configuration import ConfigurationManager
-from kidney_disease_classifier.components.model_training import Training
+from src.kidney_disease_classifier.config.configuration import ConfigurationManager
+from src.kidney_disease_classifier.components.model_training import Training
 from kidney_disease_classifier import logger
 
 STAGE_NAME = "Training"
@@ -12,10 +12,7 @@ class ModelTrainingPipeline:
         config = ConfigurationManager()
         training_config = config.get_training_config()
         training = Training(config=training_config)
-        training.get_base_model()
-        training.load_datasets()
-        training.build_pipeline()
-        training.train()
+        training.run()
 
 
 

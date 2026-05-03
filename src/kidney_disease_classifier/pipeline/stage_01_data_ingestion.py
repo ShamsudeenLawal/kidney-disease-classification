@@ -1,6 +1,6 @@
-from kidney_disease_classifier import logger
-from kidney_disease_classifier.config.configuration import ConfigurationManager
-from kidney_disease_classifier.components.data_ingestion import DataIngestion
+from src.kidney_disease_classifier import logger
+from src.kidney_disease_classifier.config.configuration import ConfigurationManager
+from src.kidney_disease_classifier.components.data_ingestion import DataIngestion
 
 
 STAGE_NAME = "Data Ingestion stage"
@@ -13,8 +13,7 @@ class DataIngestionTrainingPipeline:
         config = ConfigurationManager()
         data_ingestion_config = config.get_data_ingestion_config()
         data_ingestion = DataIngestion(config=data_ingestion_config)
-        data_ingestion.download_file()
-        data_ingestion.extract_zip_file()
+        data_ingestion.run()
 
 
 if __name__ == '__main__':

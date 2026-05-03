@@ -3,26 +3,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-from kidney_disease_classifier.config.configuration import ConfigurationManager
-
-
-def select_preprocessor(params):
-    model_type = params.MODEL_TYPE.lower()
-
-    preprocessors = {
-        "vgg16": tf.keras.applications.vgg16.preprocess_input,
-        "resnet50": tf.keras.applications.resnet50.preprocess_input,
-        "mobilenetv2": tf.keras.applications.mobilenet_v2.preprocess_input,
-        "efficientnetb0": tf.keras.applications.efficientnet.preprocess_input,
-    }
-
-    if model_type not in preprocessors:
-        raise ValueError(
-            f"Invalid model type: {params.MODEL_TYPE}. "
-            "Choose from ['VGG16', 'ResNet50', 'MobileNetV2', 'EfficientNetB0']"
-        )
-
-    return preprocessors[model_type]
+from kidney_disease_classifier.models.model_factory import get_preprocessor
+from src.kidney_disease_classifier.config.configuration import ConfigurationManager
 
 
 class PredictionPipeline:
@@ -35,7 +17,7 @@ class PredictionPipeline:
         self.model = load_model(self.config.training.trained_model_path)
 
         # Load preprocessor once
-        self.preprocessor = select_preprocessor(self.params)
+        self.preprocessor = get_preprocessor(self.params.model.name)
 
         # Optional: class labels (can be moved to config.yaml)
         self.class_labels = {
@@ -48,7 +30,7 @@ class PredictionPipeline:
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
 
-        img = image.load_img(image_path, target_size=self.params.IMAGE_SIZE)
+        img = image.load_img(image_path, target_size=self.params.model.input_shape[:-1])
         img_array = image.img_to_array(img)
         return img_array
 
@@ -65,10 +47,21 @@ class PredictionPipeline:
 
     def _postprocess(self, preds: np.ndarray) -> dict:
         """Convert model output to human-readable format"""
-        class_idx = int(np.argmax(preds, axis=1)[0])
-        confidence = float(np.max(preds))
 
-        label = self.class_labels.get(class_idx, "Unknown")
+        preds = np.squeeze(preds)  # remove batch dimension safely
+
+        # Multi-class case
+        if preds.ndim > 0 and len(preds) > 1:
+            class_idx = int(np.argmax(preds))
+            confidence = float(np.max(preds))
+
+        # Binary case (sigmoid output)
+        else:
+            prob = float(preds)
+            class_idx = 1 if prob > 0.5 else 0
+            confidence = prob if class_idx == 1 else 1 - prob
+
+        label = self.class_labels.get(class_idx)
 
         return {
             "label": label,

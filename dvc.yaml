@@ -1,55 +1,58 @@
 stages:
   data_ingestion:
-    cmd: python src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
+    cmd: python -m src.kidney_disease_classifier.pipeline.stage_01_data_ingestion
     deps:
       - src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
-      - config/config.yaml
+      - configs/configs.yaml
     outs:
-      - artifacts/data_ingestion/raw/kidney-ct-scan-image
-
+      - artifacts/data_ingestion/raw
+      - artifacts/data_ingestion/split
 
   prepare_base_model:
-    cmd: python src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
+    cmd: python -m src.kidney_disease_classifier.pipeline.stage_02_prepare_base_model
     deps:
       - src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
-      - config/config.yaml
+      - configs/configs.yaml
     params:
-      - IMAGE_SIZE
-      - CLASSES
-      - WEIGHTS
-      - LEARNING_RATE
-      - MODEL_TYPE
+      - model.name
+      - model.input_shape
+      - model.weights
+      - training.learning_rate
+      - transfer_learning.freeze_all
+      - transfer_learning.freeze_till
+
     outs:
       - artifacts/prepare_base_model
 
 
   training:
-    cmd: python src/kidney_disease_classifier/pipeline/stage_03_model_training.py
+    cmd: python -m src.kidney_disease_classifier.pipeline.stage_03_model_training
     deps:
       - src/kidney_disease_classifier/pipeline/stage_03_model_training.py
-      - config/config.yaml
-      - artifacts/data_ingestion/raw/kidney-ct-scan-image
+      - configs/configs.yaml
+      - artifacts/data_ingestion/split
       - artifacts/prepare_base_model
     params:
-      - IMAGE_SIZE
-      - EPOCHS
-      - BATCH_SIZE
-      - AUGMENTATION
-      - MODEL_TYPE
+      - model
+      - training
+      - augmentation
+      - transfer_learning
+      
     outs:
-      - artifacts/training/model.keras
+      - artifacts/training
 
 
   evaluation:
-    cmd: python src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
+    cmd: python -m src.kidney_disease_classifier.pipeline.stage_04_model_evaluation
     deps:
       - src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
-      - config/config.yaml
-      - artifacts/data_ingestion/raw/kidney-ct-scan-image
-      - artifacts/training/model.keras
+      - configs/configs.yaml
+      - artifacts/data_ingestion/split/test
+      - artifacts/training
     params:
-      - IMAGE_SIZE
-      - BATCH_SIZE
+      - model.name
+      - model.input_shape
+      - training.batch_size
+
     metrics:
-    - scores.json:
-        cache: false
+      - artifacts/evaluation/scores.json

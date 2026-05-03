@@ -1,130 +1,156 @@
 schema: '2.0'
 stages:
   data_ingestion:
-    cmd: python 
-      src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
+    cmd: python -m 
+      src.kidney_disease_classifier.pipeline.stage_01_data_ingestion
     deps:
-    - path: config/config.yaml
+    - path: configs/configs.yaml
       hash: md5
-      md5: aecb5f89469000c8df1a3ebf0e71ee02
-      size: 571
+      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
+      size: 1166
       isexec: true
     - path: src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
       hash: md5
-      md5: d7c9c7532a51778ac57625b0e48131ce
-      size: 916
+      md5: c90fc3454dfe75e43fcbeea661df50c3
+      size: 876
       isexec: true
     outs:
-    - path: artifacts/data_ingestion/raw/kidney-ct-scan-image
+    - path: artifacts/data_ingestion/raw
       hash: md5
-      md5: 33ed59dbe5dec8ce2bb8e489b55203e4.dir
+      md5: 6bdd53ab7c5c24c0fde8c1b5e8878520.dir
+      size: 58936381
+      nfiles: 465
+    - path: artifacts/data_ingestion/split
+      hash: md5
+      md5: 0601ad383b9e6ef8f0418b47d6d0836a.dir
       size: 58936381
       nfiles: 465
   prepare_base_model:
-    cmd: python 
-      src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
+    cmd: python -m 
+      src.kidney_disease_classifier.pipeline.stage_02_prepare_base_model
     deps:
-    - path: config/config.yaml
+    - path: configs/configs.yaml
       hash: md5
-      md5: aecb5f89469000c8df1a3ebf0e71ee02
-      size: 571
+      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
+      size: 1166
       isexec: true
     - path: 
         src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
       hash: md5
-      md5: 22ddbc3ea7ea488a4639048b96ed0865
-      size: 1004
+      md5: 33f693b3b105bb2db481aeffe5ee48b1
+      size: 947
       isexec: true
     params:
       params.yaml:
-        CLASSES: 2
-        IMAGE_SIZE:
+        model.input_shape:
         - 224
         - 224
         - 3
-        LEARNING_RATE: 0.01
-        MODEL_TYPE: VGG16
-        WEIGHTS: imagenet
+        model.name: mobilenetv2
+        model.weights: imagenet
+        training.learning_rate: 0.0001
+        transfer_learning.freeze_all: false
+        transfer_learning.freeze_till: 20
     outs:
     - path: artifacts/prepare_base_model
       hash: md5
-      md5: 79191f6ed2761e2a02dc882540fb6039.dir
-      size: 118073245
+      md5: b19890a7ddee977159fea36904db7458.dir
+      size: 19902795
       nfiles: 2
   training:
-    cmd: python 
-      src/kidney_disease_classifier/pipeline/stage_03_model_training.py
+    cmd: python -m 
+      src.kidney_disease_classifier.pipeline.stage_03_model_training
     deps:
-    - path: artifacts/data_ingestion/raw/kidney-ct-scan-image
+    - path: artifacts/data_ingestion/split
       hash: md5
-      md5: 33ed59dbe5dec8ce2bb8e489b55203e4.dir
+      md5: 0601ad383b9e6ef8f0418b47d6d0836a.dir
       size: 58936381
       nfiles: 465
     - path: artifacts/prepare_base_model
       hash: md5
-      md5: 79191f6ed2761e2a02dc882540fb6039.dir
-      size: 118073245
+      md5: b19890a7ddee977159fea36904db7458.dir
+      size: 19902795
       nfiles: 2
-    - path: config/config.yaml
+    - path: configs/configs.yaml
       hash: md5
-      md5: aecb5f89469000c8df1a3ebf0e71ee02
-      size: 571
+      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
+      size: 1166
       isexec: true
     - path: src/kidney_disease_classifier/pipeline/stage_03_model_training.py
       hash: md5
-      md5: 3fceb26f47f958b3767889c92fe2509d
-      size: 943
+      md5: 1171b5a8512eeec9fd95a12779ec7d64
+      size: 848
       isexec: true
     params:
       params.yaml:
-        AUGMENTATION: true
-        BATCH_SIZE: 16
-        EPOCHS: 10
-        IMAGE_SIZE:
-        - 224
-        - 224
-        - 3
-        MODEL_TYPE: VGG16
+        augmentation:
+          enabled: true
+          horizontal_flip: true
+          rotation: 0.2
+          zoom: 0.2
+          translation: 0.1
+        model:
+          name: mobilenetv2
+          input_shape:
+          - 224
+          - 224
+          - 3
+          num_classes: 2
+          weights: imagenet
+        training:
+          batch_size: 16
+          epochs: 10
+          learning_rate: 0.0001
+          optimizer: adam
+          callbacks:
+            early_stopping:
+              monitor: val_loss
+              patience: 5
+              restore_best_weights: true
+        transfer_learning:
+          freeze_all: false
+          freeze_till: 20
     outs:
-    - path: artifacts/training/model.keras
+    - path: artifacts/training
       hash: md5
-      md5: aac50af10c45cad4956709cab08de466
-      size: 59141230
-      isexec: true
+      md5: 8fb8a78b62332e9a84504b9f27da20fc.dir
+      size: 21297319
+      nfiles: 1
   evaluation:
-    cmd: python 
-      src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
+    cmd: python -m 
+      src.kidney_disease_classifier.pipeline.stage_04_model_evaluation
     deps:
-    - path: artifacts/data_ingestion/raw/kidney-ct-scan-image
+    - path: artifacts/data_ingestion/split/test
       hash: md5
-      md5: 33ed59dbe5dec8ce2bb8e489b55203e4.dir
-      size: 58936381
-      nfiles: 465
-    - path: artifacts/training/model.keras
+      md5: b49c62a6e4a9b3a35339c9f00c3ffe8a.dir
+      size: 9185595
+      nfiles: 70
+    - path: artifacts/training
       hash: md5
-      md5: aac50af10c45cad4956709cab08de466
-      size: 59141230
-      isexec: true
-    - path: config/config.yaml
+      md5: 8fb8a78b62332e9a84504b9f27da20fc.dir
+      size: 21297319
+      nfiles: 1
+    - path: configs/configs.yaml
       hash: md5
-      md5: aecb5f89469000c8df1a3ebf0e71ee02
-      size: 571
+      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
+      size: 1166
       isexec: true
     - path: src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
       hash: md5
-      md5: 20fd2a5827de93787e3eb09bef195757
-      size: 883
+      md5: d08346e98c9472a277897ba37e42f51c
+      size: 829
       isexec: true
     params:
       params.yaml:
-        BATCH_SIZE: 16
-        IMAGE_SIZE:
+        model.input_shape:
         - 224
         - 224
         - 3
+        model.name: mobilenetv2
+        training.batch_size: 16
     outs:
-    - path: scores.json
+    - path: artifacts/evaluation/scores.json
       hash: md5
-      md5: ea96b44d96e155786ec53e730b0d4576
-      size: 72
+      md5: b9e27afe8c9486bd4ab4d6e253030d86
+      size: 99
       isexec: true

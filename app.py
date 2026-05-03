@@ -41,7 +41,7 @@ def predict():
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
 
-        # ✅ Pass file path to pipeline
+        # Pass file path to pipeline
         result = pipeline.predict(filepath)
 
         # # Optional: clean up file after prediction
@@ -54,4 +54,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=8080)
