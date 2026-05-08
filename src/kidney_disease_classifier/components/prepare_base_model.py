@@ -29,7 +29,6 @@ class PrepareBaseModel:
     def _prepare_full_model(
         self,
         model: tf.keras.Model,
-        classes: int,
         freeze_all: bool = True,
         freeze_till: int = 10,
         learning_rate: float = 0.001
@@ -37,6 +36,8 @@ class PrepareBaseModel:
         """
         Adds classification head + handles transfer learning setup
         """
+        # -------- GET NUM CLASSES -------
+        classes = self._get_num_classes()
 
         # -------- FREEZE LAYERS --------
         if freeze_all:
@@ -79,7 +80,6 @@ class PrepareBaseModel:
     def update_base_model(self):
         self.full_model = self._prepare_full_model(
             model=self.model,
-            classes=self.config.num_classes,
             freeze_all=self.config.freeze_all,
             freeze_till=self.config.freeze_till,
             learning_rate=self.config.learning_rate
@@ -94,6 +94,20 @@ class PrepareBaseModel:
         model.save(path)
         logger.info(f"Model saved at {path}")
 
+    def _get_num_classes(self):
+        ds = tf.keras.utils.image_dataset_from_directory(
+            self.config.train_dir,
+            image_size=self.config.input_shape[:-1],
+            shuffle=False,
+            )
+        class_names = ds.class_names
+
+        with open(self.config.class_labels_path, "w") as file:
+            for name in class_names:
+                file.write(f"{name}\n")
+        
+        return len(class_names)
+    
     def run(self):
         """
         Executes the full base model preparation pipeline
@@ -112,4 +126,3 @@ class PrepareBaseModel:
         except Exception as e:
             
             raise Exception(e, sys)
-            # raise CustomException(e, sys)

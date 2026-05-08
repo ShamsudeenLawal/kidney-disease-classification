@@ -8,8 +8,6 @@ from ensure import ensure_annotations
 from box import ConfigBox
 from pathlib import Path
 from typing import Any
-import base64
-
 
 
 @ensure_annotations
@@ -125,15 +123,10 @@ def get_size(path: Path) -> str:
     return f"~ {size_in_kb} KB"
 
 
-def decodeImage(imgstring, filepath):
-    imgdata = base64.b64decode(imgstring)
-    with open(filepath, 'wb') as f:
-        f.write(imgdata)
+def get_class_labels(filepath):
+    with open(filepath, "r") as file:
+        class_labels = file.readlines()
 
-
-def encodeImageIntoBase64(filepath):
-    with open(filepath, "rb") as f:
-        image_data = f.read()
-        return base64.b64encode(image_data)
-
-
+    class_labels = [name.strip() for name in class_labels]
+    
+    return class_labels

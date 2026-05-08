@@ -5,7 +5,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from kidney_disease_classifier.models.model_factory import get_preprocessor
 from src.kidney_disease_classifier.config.configuration import ConfigurationManager
-
+from src.kidney_disease_classifier.utils.common import get_class_labels
 
 class PredictionPipeline:
     def __init__(self):
@@ -20,10 +20,7 @@ class PredictionPipeline:
         self.preprocessor = get_preprocessor(self.params.model.name)
 
         # Optional: class labels (can be moved to config.yaml)
-        self.class_labels = {
-            0: "Normal",
-            1: "Tumor"
-        }
+        self.class_labels = get_class_labels(self.config.prepare_base_model.class_labels_path)
 
     def _load_image(self, image_path: str) -> np.ndarray:
         """Load and convert image to array"""
@@ -42,7 +39,7 @@ class PredictionPipeline:
 
     def _predict(self, processed_image: np.ndarray) -> np.ndarray:
         """Run model inference"""
-        preds = self.model.predict(processed_image)
+        preds = self.model.predict(processed_image, verbose=0)
         return preds
 
     def _postprocess(self, preds: np.ndarray) -> dict:
@@ -61,7 +58,7 @@ class PredictionPipeline:
             class_idx = 1 if prob > 0.5 else 0
             confidence = prob if class_idx == 1 else 1 - prob
 
-        label = self.class_labels.get(class_idx)
+        label = self.class_labels[class_idx]
 
         return {
             "label": label,

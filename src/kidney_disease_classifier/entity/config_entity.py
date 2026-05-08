@@ -23,7 +23,8 @@ class PrepareBaseModelConfig:
     freeze_all: bool
     freeze_till: int
     weights: str
-    num_classes: int
+    class_labels_path: Path
+    train_dir: Path
 
 @dataclass(frozen=True)
 class TrainingConfig:
@@ -39,7 +40,7 @@ class TrainingConfig:
     # ---------------- MODEL ----------------
     model_name: str
     input_shape: list
-    num_classes: int
+    # num_classes: int
     weights: str
 
     # ---------------- TRAINING ----------------

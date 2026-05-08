@@ -6,8 +6,8 @@ stages:
     deps:
     - path: configs/configs.yaml
       hash: md5
-      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
-      size: 1166
+      md5: f5485a9d6a21899edb75d34ad6e427cc
+      size: 1233
       isexec: true
     - path: src/kidney_disease_classifier/pipeline/stage_01_data_ingestion.py
       hash: md5
@@ -31,8 +31,8 @@ stages:
     deps:
     - path: configs/configs.yaml
       hash: md5
-      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
-      size: 1166
+      md5: f5485a9d6a21899edb75d34ad6e427cc
+      size: 1233
       isexec: true
     - path: 
         src/kidney_disease_classifier/pipeline/stage_02_prepare_base_model.py
@@ -54,9 +54,9 @@ stages:
     outs:
     - path: artifacts/prepare_base_model
       hash: md5
-      md5: b19890a7ddee977159fea36904db7458.dir
-      size: 19902795
-      nfiles: 2
+      md5: 7b372e2831f813ffa67f482e813444d2.dir
+      size: 19902808
+      nfiles: 3
   training:
     cmd: python -m 
       src.kidney_disease_classifier.pipeline.stage_03_model_training
@@ -68,13 +68,13 @@ stages:
       nfiles: 465
     - path: artifacts/prepare_base_model
       hash: md5
-      md5: b19890a7ddee977159fea36904db7458.dir
-      size: 19902795
-      nfiles: 2
+      md5: 7b372e2831f813ffa67f482e813444d2.dir
+      size: 19902808
+      nfiles: 3
     - path: configs/configs.yaml
       hash: md5
-      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
-      size: 1166
+      md5: f5485a9d6a21899edb75d34ad6e427cc
+      size: 1233
       isexec: true
     - path: src/kidney_disease_classifier/pipeline/stage_03_model_training.py
       hash: md5
@@ -113,7 +113,7 @@ stages:
     outs:
     - path: artifacts/training
       hash: md5
-      md5: 8fb8a78b62332e9a84504b9f27da20fc.dir
+      md5: 6f79cbd3460cd027196b79e1fff3f072.dir
       size: 21297319
       nfiles: 1
   evaluation:
@@ -127,13 +127,13 @@ stages:
       nfiles: 70
     - path: artifacts/training
       hash: md5
-      md5: 8fb8a78b62332e9a84504b9f27da20fc.dir
+      md5: 6f79cbd3460cd027196b79e1fff3f072.dir
       size: 21297319
       nfiles: 1
     - path: configs/configs.yaml
       hash: md5
-      md5: 83dc1db1041e7e17cdaf2ae0ed748c23
-      size: 1166
+      md5: f5485a9d6a21899edb75d34ad6e427cc
+      size: 1233
       isexec: true
     - path: src/kidney_disease_classifier/pipeline/stage_04_model_evaluation.py
       hash: md5
@@ -151,6 +151,6 @@ stages:
     outs:
     - path: artifacts/evaluation/scores.json
       hash: md5
-      md5: b9e27afe8c9486bd4ab4d6e253030d86
-      size: 99
+      md5: 8a58bafd060e9f1edec1271dcb308663
+      size: 144
       isexec: true

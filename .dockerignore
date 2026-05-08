@@ -1,0 +1,56 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# virtual environments
+venv/
+.venv/
+env/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/
+
+# OS files
+.DS_Store
+Thumb.db
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Environment variables
+.env/
+
+# DVC Cache
+.dvc/cache/
+
+# my files and directories
+# this is needed for building image locally but not with ci/cd since they have been included in .gitignore file
+
+artifacts/data_ingestion
+artifacts/prepare_base_model/base_model.keras
+artifacts/prepare_base_model/base_model_updated.keras
+
+mlruns/
+research/
+test-images/
+assets/
+uploads/
+main.py
+sample.py
+gradio_app.py
+tf_env_requirements.txt
+notes.txt
+template.py
+dvc.lock

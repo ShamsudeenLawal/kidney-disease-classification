@@ -211,7 +211,12 @@ __marimo__/
 .github/
 logs/
 mlruns/
-artifacts/
+
+## artifacts to leave out
+artifacts/data_ingestion
+artifacts/prepare_base_model/base_model.keras
+artifacts/prepare_base_model/base_model_updated.keras
+
 uploads/
 sample.py
 gradio_app.py

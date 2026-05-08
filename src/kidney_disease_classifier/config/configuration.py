@@ -72,7 +72,8 @@ class ConfigurationManager:
             freeze_all=transfer_learning_params.freeze_all,
             freeze_till=transfer_learning_params.freeze_till,
             weights=model_params.weights,
-            num_classes=model_params.num_classes,
+            class_labels_path = Path(config.class_labels_path),
+            train_dir = Path(self.config.data_ingestion.split.train_dir)
             
         )
 
@@ -97,7 +98,7 @@ class ConfigurationManager:
 
             model_name=params.model.name,
             input_shape=params.model.input_shape,
-            num_classes=params.model.num_classes,
+            # num_classes=params.model.num_classes,
             weights=params.model.weights,
 
             batch_size=params.training.batch_size,
